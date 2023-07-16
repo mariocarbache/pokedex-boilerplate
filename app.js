@@ -2,9 +2,51 @@ const express = require("express");
 
 const app = express();
 
+const morgan = require("morgan");
+const pokeBank = require("./pokeBank");
+
+app.use(morgan("dev"));
+
 app.use(express.static("public"));
 
-app.get("/", (req, res) => res.send("Hello World!"));
+
+
+app.get("/", (req, res) => {
+  const pokemonList = pokeBank.list();
+  let html = "<header><img src='/logo.png'/></header><h1>Pokedex</h1>";
+  html += "<title>My Pokedex</title><link rel='stylesheet' href='/style.css' />";
+  pokemonList.forEach((pokemon) => {
+    html += `<div><img class="pokemon-img" src=${pokemon.image} /><p><a href="/pokemon/${pokemon.id}">${pokemon.name}</a></p></div>`;
+  });
+  res.send(html);
+});
+
+app.get("/pokemon/:id", (req, res) => {
+  const pokemon = pokeBank.find(req.params.id);
+  if (!pokemon.id) {
+    res.status(404);
+    const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>My Pokedex</title>
+      <link rel="stylesheet" href="/style.css" />
+    </head>
+    <body>
+      <header><img src="/logo.png"/></header>
+        <p>Pika pika... Page Not Found</p>
+    </body>
+    </html>`;
+    res.send(html);
+  } else {
+    let html = `<link rel='stylesheet' href='/style.css' /><img class="pokemon-img" src=${pokemon.image} /><h1>${pokemon.name}</h1>`;
+    html += `<p>Type: ${pokemon.type}</p>`;
+    html += `<p>Trainer: ${pokemon.trainer}</p>`;
+    html += `<p>Date: ${pokemon.date}</p>`;
+    res.send(html);
+  }
+});
+
 
 const PORT = 3000;
 app.listen(PORT, () => {
